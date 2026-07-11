@@ -74,6 +74,11 @@ set_property -dict $preset_args [get_bd_cells ps7]
 apply_bd_automation -rule xilinx.com:bd_rule:processing_system7 \
     -config {make_external "FIXED_IO, DDR"} [get_bd_cells ps7]
 
+# M_AXI_GP0 is enabled by default but nothing on the PL side consumes it
+# yet, which leaves M_AXI_GP0_ACLK unconnected and fails validate_bd_design.
+# Disable it until a PL peripheral needs it.
+set_property CONFIG.PCW_USE_M_AXI_GP0 0 [get_bd_cells ps7]
+
 # TODO: add custom PL peripherals here
 
 validate_bd_design

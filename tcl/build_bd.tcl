@@ -83,7 +83,7 @@ set_property CONFIG.PCW_USE_M_AXI_GP0 0 [get_bd_cells ps7]
 
 validate_bd_design
 make_wrapper -files [get_files system.bd] -top
-add_files -norecurse ./build/proj.gen/sources_1/bd/system/hdl/system_wrapper.v
+add_files -norecurse ./build/proj/proj.gen/sources_1/bd/system/hdl/system_wrapper.v
 
 save_bd_design
 close_project

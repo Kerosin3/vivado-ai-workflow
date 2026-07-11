@@ -74,12 +74,18 @@ set_property -dict $preset_args [get_bd_cells ps7]
 apply_bd_automation -rule xilinx.com:bd_rule:processing_system7 \
     -config {make_external "FIXED_IO, DDR"} [get_bd_cells ps7]
 
-# M_AXI_GP0 is enabled by default but nothing on the PL side consumes it
-# yet, which leaves M_AXI_GP0_ACLK unconnected and fails validate_bd_design.
-# Disable it until a PL peripheral needs it.
-set_property CONFIG.PCW_USE_M_AXI_GP0 0 [get_bd_cells ps7]
+# AXI-Lite register peripheral (rtl/axi_lite_regs.v) on the PS7's GP0 AXI
+# master. The axi4 automation rule inserts the SmartConnect, wires up
+# FCLK_CLK0 and a matching reset synchronizer, and assigns an address.
+create_bd_cell -type module -reference axi_lite_regs axi_lite_regs_0
 
-# TODO: add custom PL peripherals here
+apply_bd_automation -rule xilinx.com:bd_rule:axi4 -config { \
+    Clk_master {Auto} Clk_slave {Auto} Clk_xbar {Auto} \
+    Master {/ps7/M_AXI_GP0} Slave {/axi_lite_regs_0/S_AXI} \
+    ddr_seg {Auto} intc_ip {New AXI SmartConnect} master_apm {0} \
+} [get_bd_intf_pins axi_lite_regs_0/S_AXI]
+
+assign_bd_address
 
 validate_bd_design
 make_wrapper -files [get_files system.bd] -top

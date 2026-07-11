@@ -36,6 +36,7 @@ is not a hard gate right now.
 ## Hard rules
 
 - Commit any RTL change to git before the next build iteration
+- Do not launch multiple Vivado processes simulatiosly
 - Board files for the target board must already be installed in the local Vivado
   (`/opt/XILINX/Vivado/2024.2/data/boards/board_files/`) — don't assume apply_board_preset will
   just work without checking first

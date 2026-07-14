@@ -6,6 +6,10 @@
 
 set BUILD_DIR [expr {[info exists ::env(BUILD_DIR)] ? $::env(BUILD_DIR) : "./build"}]
 
+# ENGINE picks which output_products/ subfolder the final .bit lands in —
+# "local" (default) or "docker", set by the /build-docker flow.
+set ENGINE [expr {[info exists ::env(ENGINE)] ? $::env(ENGINE) : "local"}]
+
 open_project $BUILD_DIR/proj/proj.xpr
 
 launch_runs impl_1 -to_step write_bitstream
@@ -20,7 +24,13 @@ if {[string match "*ERROR*" $status] || [string match "*Failed*" $status]} {
 
 set bit_files [glob -nocomplain $BUILD_DIR/proj/proj.runs/impl_1/*.bit]
 if {[llength $bit_files] > 0} {
-    puts "Bitstream generated: [lindex $bit_files 0]"
+    set bit_file [lindex $bit_files 0]
+    puts "Bitstream generated: $bit_file"
+
+    set out_dir "output_products/$ENGINE"
+    file mkdir $out_dir
+    file copy -force $bit_file $out_dir
+    puts "Copied to $out_dir/[file tail $bit_file]"
 } else {
     puts "WARNING: write_bitstream reported success but no .bit file found"
 }

@@ -49,6 +49,17 @@ local, `build-docker/reports/` for the Docker flow):
 - `timing_summary.rpt` — timing, check WNS/TNS
 - `utilization.rpt` — resource usage (LUT/FF/BRAM/DSP)
 
+## Final output
+
+The only real deliverable is the `.bit` file — `build/` and `build-docker/`
+are regenerated Vivado project scaffolding, not something to hand off.
+`tcl/bitstream.tcl` copies a successful `write_bitstream` result to
+`output_products/local/` or `output_products/docker/` (picked via the
+`ENGINE` env var, default `local`) — that's the folder to point at for
+flashing or handoff, not `build/proj/proj.runs/impl_1/`. Each successful
+build overwrites the previous `.bit` there; it's the current known-good
+bitstream per engine, not a version history.
+
 ## Target
 
 - Board: Zedboard

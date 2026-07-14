@@ -36,7 +36,10 @@ as long as its inputs haven't changed.
 
 Tip: add `source .../settings64.sh` to `~/.bashrc`/`~/.zshrc` once, so you don't have to re-run it in every new terminal session.
 
-Reports land in `build/reports/`.
+Reports land in `build/reports/`. On a successful `bitstream.tcl` run, the
+final `.bit` file is also copied to `output_products/local/` — that's the
+folder to look in for the actual deliverable; `build/` itself is
+regenerated/intermediate Vivado project output.
 
 ## Running a build in Docker
 
@@ -93,3 +96,19 @@ Two other images were evaluated first and both had real blockers:
 baked into an image rather than repeated on every build, since containers
 are ephemeral (`--rm`) and re-running `apt-get install locales` on every
 stage would mean root + network access on every single build invocation.
+
+## Final output
+
+`write_bitstream` success is the only thing that matters as a deliverable —
+everything else under `build/` / `build-docker/` is regenerated Vivado
+project scaffolding. `tcl/bitstream.tcl` copies the resulting `.bit` file to:
+
+- `output_products/local/` for a local `/build`
+- `output_products/docker/` for a `/build-docker` run (selected via
+  `ENGINE=docker`, since that stage's `docker run` sets it — `ENGINE`
+  defaults to `local` when unset, matching the local flow)
+
+Each successful bitstream build overwrites the previous `.bit` in that
+folder — these are meant to be the current/latest known-good bitstream per
+engine, not a version history (git history covers that, same rationale as
+not versioning `build/reports/`).

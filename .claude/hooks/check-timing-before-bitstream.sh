@@ -6,9 +6,10 @@
 # STRICT_TIMING unset/0 just warns and lets it through — useful in early
 # development when the design isn't fully wired up yet.
 #
-# Matches "bitstream.tcl" (not the old "build_bitstream.tcl" — the actual
-# stage file is tcl/bitstream.tcl) so this also catches the /build-docker
-# flow's `docker run ... vivado -source tcl/bitstream.tcl` invocation.
+# Matches "bitstream.tcl" — the actual stage file is tcl/bake_bitstream.tcl,
+# and "bitstream.tcl" is a substring of that, so this also catches the
+# /build-docker flow's `docker run ... vivado -source tcl/bake_bitstream.tcl`
+# invocation without needing to special-case it.
 # Report path follows whatever BUILD_DIR the command set (e.g. -e
 # BUILD_DIR=./build-docker), defaulting to ./build like the tcl scripts do.
 

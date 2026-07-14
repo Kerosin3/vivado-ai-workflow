@@ -8,7 +8,7 @@
   Zedboard preset (Digilent preset.xml values, baked in as a Tcl dict)
 - `tcl/synth.tcl` — synthesis only
 - `tcl/impl.tcl` — implementation (place & route), stops before bitstream
-- `tcl/bitstream.tcl` — write_bitstream only
+- `tcl/bake_bitstream.tcl` — write_bitstream only
 - `rtl/`, `constraints/` — empty, for your source and .xdc
 
 ## Setup
@@ -26,17 +26,17 @@ source /opt/XILINX/Vivado/2024.2/settings64.sh
 vivado -mode batch -source tcl/build_bd.tcl
 vivado -mode batch -source tcl/synth.tcl
 vivado -mode batch -source tcl/impl.tcl
-vivado -mode batch -source tcl/bitstream.tcl
+vivado -mode batch -source tcl/bake_bitstream.tcl
 ```
 
 Each stage can also be run on its own — e.g. after only changing constraints,
-you can re-run just `impl.tcl` + `bitstream.tcl` without redoing synthesis.
+you can re-run just `impl.tcl` + `bake_bitstream.tcl` without redoing synthesis.
 Vivado's run system picks up incrementally from wherever a stage left off,
 as long as its inputs haven't changed.
 
 Tip: add `source .../settings64.sh` to `~/.bashrc`/`~/.zshrc` once, so you don't have to re-run it in every new terminal session.
 
-Reports land in `build/reports/`. On a successful `bitstream.tcl` run, the
+Reports land in `build/reports/`. On a successful `bake_bitstream.tcl` run, the
 final `.bit` file is also copied to `output_products/local/` — that's the
 folder to look in for the actual deliverable; `build/` itself is
 regenerated/intermediate Vivado project output.
@@ -57,7 +57,7 @@ docker run --rm --user $(id -u):$(id -g) -e HOME=/tmp -e BUILD_DIR=./build-docke
   -v "$(pwd)":/workspace -w /workspace \
   zynq-ai-vivado:2024.1 \
   bash -c 'source /home/vivadouser/Vivado/2024.1/settings64.sh; vivado -mode batch -source tcl/build_bd.tcl'
-# repeat for tcl/synth.tcl, tcl/impl.tcl, tcl/bitstream.tcl
+# repeat for tcl/synth.tcl, tcl/impl.tcl, tcl/bake_bitstream.tcl
 ```
 
 `-e HOME=/tmp` gives Vivado a writable home dir — `--user $(id -u):$(id -g)`
@@ -101,7 +101,7 @@ stage would mean root + network access on every single build invocation.
 
 `write_bitstream` success is the only thing that matters as a deliverable —
 everything else under `build/` / `build-docker/` is regenerated Vivado
-project scaffolding. `tcl/bitstream.tcl` copies the resulting `.bit` file to:
+project scaffolding. `tcl/bake_bitstream.tcl` copies the resulting `.bit` file to:
 
 - `output_products/local/` for a local `/build`
 - `output_products/docker/` for a `/build-docker` run (selected via

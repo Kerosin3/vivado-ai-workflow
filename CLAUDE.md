@@ -11,7 +11,7 @@ source /opt/XILINX/Vivado/2024.2/settings64.sh
 vivado -mode batch -source tcl/build_bd.tcl
 vivado -mode batch -source tcl/synth.tcl
 vivado -mode batch -source tcl/impl.tcl
-vivado -mode batch -source tcl/bitstream.tcl
+vivado -mode batch -source tcl/bake_bitstream.tcl
 ```
 
 Or use the `/build` command to run all four stages in order.
@@ -33,7 +33,7 @@ docker run --rm --user $(id -u):$(id -g) -e HOME=/tmp -e BUILD_DIR=./build-docke
   zynq-ai-vivado:2024.1 \
   bash -c 'source /home/vivadouser/Vivado/2024.1/settings64.sh; vivado -mode batch -source tcl/build_bd.tcl'
 ```
-(repeat for synth.tcl / impl.tcl / bitstream.tcl)
+(repeat for synth.tcl / impl.tcl / bake_bitstream.tcl)
 
 `BUILD_DIR=./build-docker` keeps the containerized project tree and reports
 separate from the local `./build/` one, so switching between engines never
@@ -53,7 +53,7 @@ local, `build-docker/reports/` for the Docker flow):
 
 The only real deliverable is the `.bit` file — `build/` and `build-docker/`
 are regenerated Vivado project scaffolding, not something to hand off.
-`tcl/bitstream.tcl` copies a successful `write_bitstream` result to
+`tcl/bake_bitstream.tcl` copies a successful `write_bitstream` result to
 `output_products/local/` or `output_products/docker/` (picked via the
 `ENGINE` env var, default `local`) — that's the folder to point at for
 flashing or handoff, not `build/proj/proj.runs/impl_1/`. Each successful
@@ -91,7 +91,7 @@ is not a hard gate right now.
 
 - RTL: synchronous reset, active-low (`rst_n`)
 - Signal names: snake_case
-- TCL scripts: one file = one flow stage (build_bd / synth / impl / bitstream / export_hw)
+- TCL scripts: one file = one flow stage (build_bd / synth / impl / bake_bitstream / export_hw)
 - use spaces as indents, 4 spaces as one indent level
 - use lowRISC styleguide as basys for your codestyle
 - in case using AXI - use Xilinx AXI port naming conventions

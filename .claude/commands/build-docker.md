@@ -59,12 +59,12 @@ mounts the repo root at `/workspace`, sources Vivado's environment, and sets
    docker run --rm --user $(id -u):$(id -g) -e HOME=/tmp -e BUILD_DIR=./build-docker -e ENGINE=docker \
      -v "$(pwd)":/workspace -w /workspace \
      zynq-ai-vivado:2024.1 \
-     bash -c 'source /home/vivadouser/Vivado/2024.1/settings64.sh; vivado -mode batch -source tcl/bitstream.tcl'
+     bash -c 'source /home/vivadouser/Vivado/2024.1/settings64.sh; vivado -mode batch -source tcl/bake_bitstream.tcl'
    ```
    On success, the `.bit` file is copied to `output_products/docker/`
-   (`ENGINE=docker` picks that subfolder — `tcl/bitstream.tcl` defaults to
-   `output_products/local/` when `ENGINE` is unset, which is what the local
-   `/build` flow uses).
+   (`ENGINE=docker` picks that subfolder — `tcl/bake_bitstream.tcl` defaults
+   to `output_products/local/` when `ENGINE` is unset, which is what the
+   local `/build` flow uses).
 
 `-e HOME=/tmp` gives Vivado a writable home dir under `--user
 $(id -u):$(id -g)` (that numeric UID has no `/etc/passwd` entry in the
@@ -72,5 +72,5 @@ container, so `$HOME` would otherwise be unset/unwritable). `--user
 $(id -u):$(id -g)` keeps all output files host-owned instead of root-owned.
 
 If $ARGUMENTS specifies a stage to start from (e.g. "synth", "impl",
-"bitstream"), skip the earlier stages and start from there instead of the
-full pipeline.
+"bake_bitstream"), skip the earlier stages and start from there instead of
+the full pipeline.

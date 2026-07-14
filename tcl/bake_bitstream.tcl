@@ -1,4 +1,8 @@
-# bitstream.tcl — write_bitstream only
+# bake_bitstream.tcl — triggers write_bitstream, then copies the resulting
+# .bit to output_products/. Named "bake" rather than "bitstream" so the
+# filename doesn't imply a direct 1:1 call to Vivado's write_bitstream Tcl
+# command — this actually drives the whole impl_1 run up to that step via
+# launch_runs, and packages the result afterward.
 # Requires impl_1 to already be routed (run impl.tcl first, or this will
 # auto-trigger synth+impl from scratch if they haven't run yet).
 # The check-timing-before-bitstream.sh hook checks this file's report before

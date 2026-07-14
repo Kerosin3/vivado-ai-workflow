@@ -10,9 +10,9 @@ or "FAILED" in output) rather than continuing to the next stage:
 2. `vivado -mode batch -source tcl/synth.tcl`
 3. `vivado -mode batch -source tcl/impl.tcl` — after this, report the WNS
    value from the output before continuing
-4. `vivado -mode batch -source tcl/bitstream.tcl` — on success, the `.bit`
-   file is copied to `output_products/local/`
+4. `vivado -mode batch -source tcl/bake_bitstream.tcl` — on success, the
+   `.bit` file is copied to `output_products/local/`
 
 If $ARGUMENTS specifies a stage to start from (e.g. "synth", "impl",
-"bitstream"), skip the earlier stages and start from there instead of the
-full pipeline.
+"bake_bitstream"), skip the earlier stages and start from there instead of
+the full pipeline.

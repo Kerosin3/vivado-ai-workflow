@@ -18,6 +18,7 @@ build-docker/**
 *.str
 webtalk*.log
 webtalk*.jou
+hs_err_pid*.log
 
 # Claude Code local, per-user settings
 .claude/settings.local.json

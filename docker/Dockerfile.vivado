@@ -12,8 +12,34 @@
 # evaluated) because that one's Vivado 2024.1 install has no Zynq-7000
 # (xc7z*) device files at all — only Artix-7 — so it can't build this
 # project's xc7z020clg484-1 target.
+# Compile the udev_enumerate_scan_devices() LD_PRELOAD shim (see
+# udev_stub.c) against Ubuntu 20.04 (focal) explicitly, matching the base
+# image's own OS, so the resulting .so is glibc-ABI-compatible with where
+# it'll actually be loaded. A separate stage so the final image doesn't
+# carry a whole gcc toolchain just for one ~1KB shared object.
+FROM ubuntu:20.04 AS udev-shim-builder
+RUN apt-get update && apt-get install -y --no-install-recommends gcc libc6-dev \
+    && rm -rf /var/lib/apt/lists/*
+COPY udev_stub.c /tmp/udev_stub.c
+RUN gcc -shared -fPIC -O2 -o /tmp/libudev_stub.so /tmp/udev_stub.c -ldl
+
 FROM gusanagy/xilinx-vivado:2024.1-x11
 USER root
-RUN apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y locales \
+RUN apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y locales dbus \
     && locale-gen en_US.UTF-8 \
     && rm -rf /var/lib/apt/lists/*
+
+# /etc/machine-id ships empty in the base image, which is one known trigger
+# for libudev crashes — set it for good measure, but it wasn't sufficient by
+# itself (see udev_stub.c for the actual, confirmed fix).
+RUN dbus-uuidgen > /etc/machine-id
+
+# See udev_stub.c: Vivado's WebTalk telemetry (triggered by launch_runs)
+# calls into libudev to fingerprint the host, and that call corrupts the
+# heap in this container — reproduced directly via `launch_runs synth_1`,
+# crashing with "realloc(): invalid pointer" or "mremap_chunk(): invalid
+# pointer" depending on heap state. Baked in as a default ENV rather than
+# left as a per-`docker run` opt-in, since every stage past build_bd calls
+# launch_runs and would otherwise need to remember to set it.
+COPY --from=udev-shim-builder /tmp/libudev_stub.so /usr/local/lib/libudev_stub.so
+ENV LD_PRELOAD=/usr/local/lib/libudev_stub.so

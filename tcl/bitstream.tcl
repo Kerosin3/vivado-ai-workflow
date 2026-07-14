@@ -4,7 +4,9 @@
 # The check-timing-before-bitstream.sh hook checks this file's report before
 # allowing this script to run when STRICT_TIMING=1 is set.
 
-open_project ./build/proj/proj.xpr
+set BUILD_DIR [expr {[info exists ::env(BUILD_DIR)] ? $::env(BUILD_DIR) : "./build"}]
+
+open_project $BUILD_DIR/proj/proj.xpr
 
 launch_runs impl_1 -to_step write_bitstream
 wait_on_run impl_1
@@ -16,7 +18,7 @@ if {[string match "*ERROR*" $status] || [string match "*Failed*" $status]} {
     exit 1
 }
 
-set bit_files [glob -nocomplain ./build/proj/proj.runs/impl_1/*.bit]
+set bit_files [glob -nocomplain $BUILD_DIR/proj/proj.runs/impl_1/*.bit]
 if {[llength $bit_files] > 0} {
     puts "Bitstream generated: [lindex $bit_files 0]"
 } else {

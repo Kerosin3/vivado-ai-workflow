@@ -1,0 +1,19 @@
+# Local derivative of gusanagy/xilinx-vivado:2024.1-x11 for the /build-docker
+# flow. The base image's `vivado` launcher (bin/rdiArgs.sh) hardcodes
+# LC_ALL=en_US.UTF-8, which isn't installed in the base image and makes
+# vivado abort on startup with:
+#   terminate called after throwing an instance of 'std::runtime_error'
+#     what():  locale::facet::_S_create_c_locale name not valid
+# Generating that locale fixes it. It has to be baked into an image rather
+# than done per-run, since containers are ephemeral (--rm) and this needs
+# network + root access that we don't want to repeat on every build.
+#
+# Chosen over siliconbootcamp/xsim-synth-2024:riscv (the other image
+# evaluated) because that one's Vivado 2024.1 install has no Zynq-7000
+# (xc7z*) device files at all — only Artix-7 — so it can't build this
+# project's xc7z020clg484-1 target.
+FROM gusanagy/xilinx-vivado:2024.1-x11
+USER root
+RUN apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y locales \
+    && locale-gen en_US.UTF-8 \
+    && rm -rf /var/lib/apt/lists/*

@@ -1,6 +1,6 @@
 {
   "permissions": {
-    "allow": ["Bash(docker run *)", "Bash(vivado *)", "Read", "Grep", "Glob"],
+    "allow": ["Bash(docker run *)", "Bash(docker pull *)", "Bash(vivado *)", "Read", "Grep", "Glob"],
     "deny": ["Bash(rm -rf *)"]
   },
   "hooks": {

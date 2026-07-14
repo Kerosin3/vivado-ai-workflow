@@ -4,15 +4,48 @@ Simple FPGA project, synthesized via locally-installed Vivado in headless/batch 
 
 ## Build
 
+Local (requires Vivado installed at `/opt/XILINX/Vivado/2024.2`):
+
 ```
 source /opt/XILINX/Vivado/2024.2/settings64.sh
 vivado -mode batch -source tcl/build_bd.tcl
-vivado -mode batch -source tcl/build_bitstream.tcl
+vivado -mode batch -source tcl/synth.tcl
+vivado -mode batch -source tcl/impl.tcl
+vivado -mode batch -source tcl/bitstream.tcl
 ```
+
+Or use the `/build` command to run all four stages in order.
+
+### Docker build
+
+Same 4 stages, run through a local image `zynq-ai-vivado:2024.1` (built from
+`docker/Dockerfile.vivado`, base `gusanagy/xilinx-vivado:2024.1-x11` +
+`locale-gen en_US.UTF-8` — the base image's vivado launcher hardcodes
+`LC_ALL=en_US.UTF-8` and crashes without it) instead of a local Vivado
+install. This is the only evaluated image with Zynq-7000 (`xc7z020clg484-1`)
+device support — `siliconbootcamp/xsim-synth-2024:riscv` was tried first but
+only has Artix-7 parts. Use the `/build-docker` command, or run manually:
+
+```
+docker build -t zynq-ai-vivado:2024.1 -f docker/Dockerfile.vivado docker
+docker run --rm --user $(id -u):$(id -g) -e HOME=/tmp -e BUILD_DIR=./build-docker \
+  -v "$(pwd)":/workspace -w /workspace \
+  zynq-ai-vivado:2024.1 \
+  bash -c 'source /home/vivadouser/Vivado/2024.1/settings64.sh; vivado -mode batch -source tcl/build_bd.tcl'
+```
+(repeat for synth.tcl / impl.tcl / bitstream.tcl)
+
+`BUILD_DIR=./build-docker` keeps the containerized project tree and reports
+separate from the local `./build/` one, so switching between engines never
+triggers a Vivado project-version-upgrade prompt in batch mode. The tcl
+scripts default to `./build` when `BUILD_DIR` is unset. `-e HOME=/tmp` gives
+Vivado a writable home dir since `--user $(id -u):$(id -g)` has no matching
+`/etc/passwd` entry in the container.
 
 ## Reports
 
-After a build, reports live in `build/reports/`:
+After a build, reports live in `<BUILD_DIR>/reports/` (`build/reports/` for
+local, `build-docker/reports/` for the Docker flow):
 - `timing_summary.rpt` — timing, check WNS/TNS
 - `utilization.rpt` — resource usage (LUT/FF/BRAM/DSP)
 
@@ -36,7 +69,9 @@ is not a hard gate right now.
 ## Hard rules
 
 - Commit any RTL change to git before the next build iteration
-- Do not launch multiple Vivado processes simulatiosly
+- Do not launch multiple Vivado processes simulatiosly — this includes the
+  Docker flow: a containerized Vivado is still a Vivado process, so never
+  run `/build` and `/build-docker` (or two `/build-docker`s) at the same time
 - Board files for the target board must already be installed in the local Vivado
   (`/opt/XILINX/Vivado/2024.2/data/boards/board_files/`) — don't assume apply_board_preset will
   just work without checking first
@@ -45,7 +80,7 @@ is not a hard gate right now.
 
 - RTL: synchronous reset, active-low (`rst_n`)
 - Signal names: snake_case
-- TCL scripts: one file = one flow stage (build_bd / build_bitstream / export_hw)
+- TCL scripts: one file = one flow stage (build_bd / synth / impl / bitstream / export_hw)
 - use spaces as indents, 4 spaces as one indent level
 - use lowRISC styleguide as basys for your codestyle
 - in case using AXI - use Xilinx AXI port naming conventions

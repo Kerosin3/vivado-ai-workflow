@@ -5,12 +5,19 @@
 # STRICT_TIMING=1 blocks write_bitstream on negative WNS (hard gate).
 # STRICT_TIMING unset/0 just warns and lets it through — useful in early
 # development when the design isn't fully wired up yet.
+#
+# Matches "bitstream.tcl" (not the old "build_bitstream.tcl" — the actual
+# stage file is tcl/bitstream.tcl) so this also catches the /build-docker
+# flow's `docker run ... vivado -source tcl/bitstream.tcl` invocation.
+# Report path follows whatever BUILD_DIR the command set (e.g. -e
+# BUILD_DIR=./build-docker), defaulting to ./build like the tcl scripts do.
 
 INPUT=$(cat)
 CMD=$(echo "$INPUT" | grep -o '"command":"[^"]*"' | head -1)
 
-if echo "$CMD" | grep -q "write_bitstream\|build_bitstream.tcl"; then
-    REPORT="build/reports/timing_summary.rpt"
+if echo "$CMD" | grep -q "write_bitstream\|bitstream.tcl"; then
+    BUILD_DIR=$(echo "$CMD" | grep -o 'BUILD_DIR=[^ "]*' | head -1 | cut -d= -f2)
+    REPORT="${BUILD_DIR:-build}/reports/timing_summary.rpt"
     if [ -f "$REPORT" ]; then
         WNS=$(grep -m1 "WNS" "$REPORT" | awk '{print $2}')
         if [ -n "$WNS" ] && (( $(echo "$WNS < 0" | bc -l 2>/dev/null || echo 0) )); then

@@ -4,6 +4,11 @@ build/**
 !build/**/
 !build/**/*.mcs
 
+# Same, for the Docker build flow's isolated project tree (BUILD_DIR=./build-docker)
+build-docker/**
+!build-docker/**/
+!build-docker/**/*.mcs
+
 # Vivado session logs/journals/temp cache
 .Xil/
 *.jou

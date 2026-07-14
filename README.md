@@ -37,3 +37,59 @@ as long as its inputs haven't changed.
 Tip: add `source .../settings64.sh` to `~/.bashrc`/`~/.zshrc` once, so you don't have to re-run it in every new terminal session.
 
 Reports land in `build/reports/`.
+
+## Running a build in Docker
+
+No local Vivado install needed — instead uses `zynq-ai-vivado:2024.1`, a
+small local image built from `docker/Dockerfile.vivado`. Build it once:
+
+```bash
+docker build -t zynq-ai-vivado:2024.1 -f docker/Dockerfile.vivado docker
+```
+
+Then run the same 4 tcl stages, wrapped in `docker run`:
+
+```bash
+docker run --rm --user $(id -u):$(id -g) -e HOME=/tmp -e BUILD_DIR=./build-docker \
+  -v "$(pwd)":/workspace -w /workspace \
+  zynq-ai-vivado:2024.1 \
+  bash -c 'source /home/vivadouser/Vivado/2024.1/settings64.sh; vivado -mode batch -source tcl/build_bd.tcl'
+# repeat for tcl/synth.tcl, tcl/impl.tcl, tcl/bitstream.tcl
+```
+
+`-e HOME=/tmp` gives Vivado a writable home dir — `--user $(id -u):$(id -g)`
+has no matching `/etc/passwd` entry in the container, so `$HOME` would
+otherwise be unwritable. `--user $(id -u):$(id -g)` itself keeps output
+files host-owned rather than root-owned; confirmed end-to-end (`build_bd.tcl`
+run through this image produced a `build-docker/proj/proj.xpr` owned by the
+host user).
+
+Setting `BUILD_DIR=./build-docker` keeps this build's project tree and
+reports (`build-docker/reports/`) separate from a local build's `build/` —
+the tcl scripts read `BUILD_DIR` from the environment and fall back to
+`./build` when it's unset, so the two never share (or fight over) the same
+Vivado project. Don't run this at the same time as a local build or another
+Docker build — only one Vivado process at a time, containerized or not.
+
+The `/build-docker` slash command runs all of the above in sequence
+(including building the image if it's missing).
+
+### Why this image, and not a plain `docker pull`
+
+Two other images were evaluated first and both had real blockers:
+
+- `siliconbootcamp/xsim-synth-2024:riscv` launches cleanly, but its Vivado
+  2024.1 install only has Artix-7 device files — `get_parts -quiet xc7z*`
+  returns nothing, so `build_bd.tcl` fails at `create_project` for this
+  project's `xc7z020clg484-1` target.
+- `gusanagy/xilinx-vivado:2024.1-x11` (the base of `zynq-ai-vivado:2024.1`)
+  does have `xc7z020clg484-1` (confirmed via `get_parts -quiet xc7z*`), but
+  its `vivado` launcher hardcodes `LC_ALL=en_US.UTF-8`, a locale that isn't
+  installed in the base image, so it aborts on startup with
+  `locale::facet::_S_create_c_locale name not valid`.
+
+`zynq-ai-vivado:2024.1` is `gusanagy/xilinx-vivado:2024.1-x11` plus
+`locale-gen en_US.UTF-8` — see `docker/Dockerfile.vivado`. The fix has to be
+baked into an image rather than repeated on every build, since containers
+are ephemeral (`--rm`) and re-running `apt-get install locales` on every
+stage would mean root + network access on every single build invocation.

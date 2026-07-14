@@ -4,6 +4,11 @@
 # detection, no vendor/ symlink dance needed. If you switch boards, replace
 # the ZEDBOARD_PS7_PRESET dict below with your board's own preset.xml values.
 
+# BUILD_DIR lets the same script target an isolated project tree per build
+# engine (e.g. ./build-docker when run inside the xsim-synth container),
+# so a local and a dockerized Vivado never share/upgrade the same .xpr.
+set BUILD_DIR [expr {[info exists ::env(BUILD_DIR)] ? $::env(BUILD_DIR) : "./build"}]
+
 set PART "xc7z020clg484-1"
 
 # Extracted from Digilent's official Zedboard preset.xml (ps7_preset block)
@@ -45,7 +50,7 @@ array set ZEDBOARD_PS7_PRESET {
     PCW_UIPARAM_DDR_TRAIN_WRITE_LEVEL  1
 }
 
-create_project proj ./build/proj -part $PART -force
+create_project proj $BUILD_DIR/proj -part $PART -force
 
 # Constraints — everything under constraints/ gets added to constrs_1
 set xdc_files [glob -nocomplain ./constraints/*.xdc]
@@ -89,7 +94,7 @@ assign_bd_address
 
 validate_bd_design
 make_wrapper -files [get_files system.bd] -top
-add_files -norecurse ./build/proj/proj.gen/sources_1/bd/system/hdl/system_wrapper.v
+add_files -norecurse $BUILD_DIR/proj/proj.gen/sources_1/bd/system/hdl/system_wrapper.v
 
 save_bd_design
 close_project

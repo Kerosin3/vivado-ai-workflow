@@ -1,0 +1,11 @@
+# Xilinx Vivado bitstream/programming-file outputs — always binary.
+# Without this, git's heuristic can misdetect these as text (long runs of
+# 0x00/repeated bytes near the start) and diff/PR views render them as a
+# wall of garbage instead of "Binary files differ". They're also pointless
+# to line-diff: place & route changes the whole .bit on almost any RTL
+# change, so there's never a meaningful line-level delta to show.
+*.bit binary
+*.bin binary
+*.ltx binary
+*.mcs binary
+*.prm binary

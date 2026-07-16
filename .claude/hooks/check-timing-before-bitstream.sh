@@ -14,7 +14,10 @@
 # BUILD_DIR=./build-docker), defaulting to ./build like the tcl scripts do.
 
 INPUT=$(cat)
-CMD=$(echo "$INPUT" | grep -o '"command":"[^"]*"' | head -1)
+# Tolerate both compact ("command":"...") and spaced ("command": "...")
+# JSON — the harness's actual PostToolUse/PreToolUse payload uses the
+# latter, which a colon-adjacent-to-quote-only pattern silently misses.
+CMD=$(echo "$INPUT" | grep -o '"command"[[:space:]]*:[[:space:]]*"[^"]*"' | head -1)
 
 if echo "$CMD" | grep -q "write_bitstream\|bitstream.tcl"; then
     BUILD_DIR=$(echo "$CMD" | grep -o 'BUILD_DIR=[^ "]*' | head -1 | cut -d= -f2)

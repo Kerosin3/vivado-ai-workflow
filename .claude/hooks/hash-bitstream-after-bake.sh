@@ -15,7 +15,10 @@
 # commands that didn't actually produce a new bitstream.
 
 INPUT=$(cat)
-CMD=$(echo "$INPUT" | grep -o '"command":"[^"]*"' | head -1)
+# Tolerate both compact ("command":"...") and spaced ("command": "...")
+# JSON — the harness's actual PostToolUse payload uses the latter, which a
+# colon-adjacent-to-quote-only pattern silently misses.
+CMD=$(echo "$INPUT" | grep -o '"command"[[:space:]]*:[[:space:]]*"[^"]*"' | head -1)
 
 if echo "$CMD" | grep -q "bitstream.tcl"; then
     for bit in output_products/local/*.bit output_products/docker/*.bit; do

@@ -20,4 +20,9 @@ file mkdir $BUILD_DIR/reports
 report_utilization -file $BUILD_DIR/reports/utilization_synth.rpt
 
 puts "Synthesis complete. Report: $BUILD_DIR/reports/utilization_synth.rpt"
+
+set synth_strategy [get_property STRATEGY [get_runs synth_1]]
+set synth_directive [get_property {STEPS.SYNTH_DESIGN.ARGS.DIRECTIVE} [get_runs synth_1]]
+puts "Synthesis strategy: $synth_strategy (synth_design directive: $synth_directive)"
+
 close_project

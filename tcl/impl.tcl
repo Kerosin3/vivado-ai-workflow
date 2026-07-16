@@ -28,4 +28,13 @@ if {[catch {exec grep -m1 -A2 "WNS" $BUILD_DIR/reports/timing_summary.rpt} wns]}
     puts $wns
 }
 
+set impl_strategy [get_property STRATEGY [get_runs impl_1]]
+puts "Implementation strategy: $impl_strategy"
+foreach step {OPT_DESIGN PLACE_DESIGN PHYS_OPT_DESIGN ROUTE_DESIGN} {
+    set prop "STEPS.${step}.ARGS.DIRECTIVE"
+    if {![catch {get_property $prop [get_runs impl_1]} directive]} {
+        puts "  $step directive: $directive"
+    }
+}
+
 close_project

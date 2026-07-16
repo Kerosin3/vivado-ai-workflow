@@ -14,10 +14,12 @@
 # BUILD_DIR=./build-docker), defaulting to ./build like the tcl scripts do.
 
 INPUT=$(cat)
-# Tolerate both compact ("command":"...") and spaced ("command": "...")
-# JSON — the harness's actual PostToolUse/PreToolUse payload uses the
-# latter, which a colon-adjacent-to-quote-only pattern silently misses.
-CMD=$(echo "$INPUT" | grep -o '"command"[[:space:]]*:[[:space:]]*"[^"]*"' | head -1)
+# Use jq, not a regex, to pull the command out — a "[^"]*" pattern breaks
+# on any command containing an embedded escaped quote (e.g. "$(pwd)"),
+# silently truncating the match before it ever reaches "bitstream.tcl".
+# Confirmed live: the real /build-docker command (which quotes "$(pwd)")
+# never matched under the old regex.
+CMD=$(echo "$INPUT" | jq -r '.tool_input.command // empty')
 
 if echo "$CMD" | grep -q "write_bitstream\|bitstream.tcl"; then
     BUILD_DIR=$(echo "$CMD" | grep -o 'BUILD_DIR=[^ "]*' | head -1 | cut -d= -f2)

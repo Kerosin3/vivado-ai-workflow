@@ -15,10 +15,12 @@
 # commands that didn't actually produce a new bitstream.
 
 INPUT=$(cat)
-# Tolerate both compact ("command":"...") and spaced ("command": "...")
-# JSON — the harness's actual PostToolUse payload uses the latter, which a
-# colon-adjacent-to-quote-only pattern silently misses.
-CMD=$(echo "$INPUT" | grep -o '"command"[[:space:]]*:[[:space:]]*"[^"]*"' | head -1)
+# Use jq, not a regex, to pull the command out — a "[^"]*" pattern breaks
+# on any command containing an embedded escaped quote (e.g. "$(pwd)"),
+# silently truncating the match before it ever reaches "bitstream.tcl".
+# Confirmed live: the real /build-docker command (which quotes "$(pwd)")
+# never matched under the old regex.
+CMD=$(echo "$INPUT" | jq -r '.tool_input.command // empty')
 
 if echo "$CMD" | grep -q "bitstream.tcl"; then
     for bit in output_products/local/*.bit output_products/docker/*.bit; do

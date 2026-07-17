@@ -108,5 +108,13 @@ validate_bd_design
 make_wrapper -files [get_files system.bd] -top
 add_files -norecurse $BUILD_DIR/proj/proj.gen/sources_1/bd/system/hdl/system_wrapper.v
 
+# With led_snake.v/clk_gen_100mhz.v added to sources_1 alongside the BD
+# wrapper, Vivado's top auto-detection picks led_snake instead of
+# system_wrapper (both look like un-instantiated roots to the plain
+# hierarchy check, since the BD only references its module cells through
+# IP Integrator metadata, not a textual instantiation) -- pin it explicitly.
+set_property top system_wrapper [current_fileset]
+update_compile_order -fileset sources_1
+
 save_bd_design
 close_project

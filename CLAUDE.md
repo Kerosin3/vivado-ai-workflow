@@ -79,7 +79,8 @@ is not a hard gate right now.
 
 ## Hard rules
 
-- Commit any RTL change to git before the next build iteration
+- Do not commit automatically on RTL changes — only commit when explicitly
+  told to (e.g. via the `/commit` command or a direct request)
 - Do not launch multiple Vivado processes simulatiosly — this includes the
   Docker flow: a containerized Vivado is still a Vivado process, so never
   run `/build` and `/build-docker` (or two `/build-docker`s) at the same time

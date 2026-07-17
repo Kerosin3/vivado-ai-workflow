@@ -92,6 +92,18 @@ apply_bd_automation -rule xilinx.com:bd_rule:axi4 -config { \
 
 assign_bd_address
 
+# LED snake demo (rtl/led_snake.v, rtl/clk_gen_100mhz.v) -- a free-running
+# PL-only block wired straight to the board's own oscillator through its
+# own MMCM, not through PS7/FCLK_CLK0, so the pattern stays visible
+# regardless of how the PS7 side of the block design is configured.
+create_bd_cell -type module -reference led_snake led_snake_0
+
+create_bd_port -dir I -type clock GCLK
+connect_bd_net [get_bd_ports GCLK] [get_bd_pins led_snake_0/clk_in]
+
+create_bd_port -dir O -from 7 -to 0 led
+connect_bd_net [get_bd_ports led] [get_bd_pins led_snake_0/led]
+
 validate_bd_design
 make_wrapper -files [get_files system.bd] -top
 add_files -norecurse $BUILD_DIR/proj/proj.gen/sources_1/bd/system/hdl/system_wrapper.v

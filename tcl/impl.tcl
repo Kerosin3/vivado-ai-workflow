@@ -9,11 +9,20 @@ open_project $BUILD_DIR/proj/proj.xpr
 launch_runs impl_1 -to_step route_design
 wait_on_run impl_1
 
+# "Failed Timing!" means route_design itself completed and only the WNS/TNS
+# requirement wasn't met -- per this project's timing policy (see
+# CLAUDE.md), that's expected/OK to iterate on, not a hard failure. Only
+# treat ERROR or a non-timing "Failed" (an actual crashed/incomplete run)
+# as fatal here.
 set status [get_property STATUS [get_runs impl_1]]
-if {[string match "*ERROR*" $status] || [string match "*Failed*" $status]} {
+if {[string match "*ERROR*" $status] || \
+        ([string match "*Failed*" $status] && ![string match "*Failed Timing*" $status])} {
     puts "IMPLEMENTATION FAILED: $status"
     close_project
     exit 1
+}
+if {[string match "*Failed Timing*" $status]} {
+    puts "NOTE: $status -- continuing anyway (negative WNS is fine for now, see CLAUDE.md)."
 }
 
 open_run impl_1

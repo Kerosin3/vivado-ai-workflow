@@ -11,11 +11,14 @@ set BUILD_DIR [expr {[info exists ::env(BUILD_DIR)] ? $::env(BUILD_DIR) : "./bui
 
 set PART "xc7z020clg484-1"
 
-# Extracted from Digilent's official Zedboard preset.xml (ps7_preset block)
+# Extracted from Digilent's official Zedboard preset.xml (ps7_preset block),
+# plus FPGA1 (below) added on top for the AD9361 FMC interface.
 array set ZEDBOARD_PS7_PRESET {
     PCW_APU_PERIPHERAL_FREQMHZ         650
     PCW_CRYSTAL_PERIPHERAL_FREQMHZ     33.333333
     PCW_FPGA0_PERIPHERAL_FREQMHZ       100
+    PCW_FPGA1_PERIPHERAL_FREQMHZ       200
+    PCW_EN_CLK1_PORT                   1
     PCW_ENET0_PERIPHERAL_ENABLE        1
     PCW_ENET0_ENET0_IO                 {MIO 16 .. 27}
     PCW_ENET0_GRP_MDIO_ENABLE          1
@@ -51,6 +54,11 @@ array set ZEDBOARD_PS7_PRESET {
 }
 
 create_project proj $BUILD_DIR/proj -part $PART -force
+
+# Vendored Analog Devices IP (ip_repo/analog/library/axi_ad9361 — see the
+# README there for origin/provenance) for the AD9361 FMC daughtercard.
+set_property ip_repo_paths [list ./ip_repo/analog/library] [current_project]
+update_ip_catalog -rebuild
 
 # Constraints — everything under constraints/ gets added to constrs_1
 set xdc_files [glob -nocomplain ./constraints/*.xdc]
@@ -89,6 +97,64 @@ apply_bd_automation -rule xilinx.com:bd_rule:axi4 -config { \
     Master {/ps7/M_AXI_GP0} Slave {/axi_lite_regs_0/S_AXI} \
     ddr_seg {Auto} intc_ip {New AXI SmartConnect} master_apm {0} \
 } [get_bd_intf_pins axi_lite_regs_0/S_AXI]
+
+# AD9361 FMC daughtercard (vendored analog.com:user:axi_ad9361, see
+# ip_repo/analog/README.md) -- digital LVDS interface + AXI-Lite register
+# access only, at this stage. The ADC/DAC streaming datapath (DMA,
+# channel pack/unpack, TDD sync) is deliberately not wired up yet: it only
+# matters once the PS side runs Linux + the IIO driver, so unused
+# ADC/DAC-path and TDD ports are tied off below instead.
+create_bd_cell -type ip -vlnv analog.com:user:axi_ad9361:1.0 axi_ad9361_0
+
+apply_bd_automation -rule xilinx.com:bd_rule:axi4 -config { \
+    Clk_master {Auto} Clk_slave {Auto} Clk_xbar {Auto} \
+    Master {/ps7/M_AXI_GP0} Slave {/axi_ad9361_0/s_axi} \
+    ddr_seg {Auto} intc_ip {Auto} master_apm {0} \
+} [get_bd_intf_pins axi_ad9361_0/s_axi]
+
+# delay_clk needs a stable 200MHz reference for IDELAYCTRL calibration
+# (FCLK1, enabled in the PS7 preset above, purely for this).
+connect_bd_net [get_bd_pins ps7/FCLK_CLK1] [get_bd_pins axi_ad9361_0/delay_clk]
+
+# l_clk is the interface clock axi_ad9361 recovers from rx_clk_in; clk is
+# its own config/DDS-domain input -- looped back per ADI's own reference
+# wiring (fmcomms2_bd.tcl) rather than driven from a separate source.
+connect_bd_net [get_bd_pins axi_ad9361_0/l_clk] [get_bd_pins axi_ad9361_0/clk]
+
+# Tie off everything belonging to the deferred ADC/DAC streaming datapath
+# and TDD sync -- see the note above the cell.
+create_bd_cell -type ip -vlnv xilinx.com:ip:xlconstant:1.1 const_zero_1b
+set_property -dict {CONFIG.CONST_WIDTH 1 CONFIG.CONST_VAL 0} [get_bd_cells const_zero_1b]
+create_bd_cell -type ip -vlnv xilinx.com:ip:xlconstant:1.1 const_zero_16b
+set_property -dict {CONFIG.CONST_WIDTH 16 CONFIG.CONST_VAL 0} [get_bd_cells const_zero_16b]
+
+foreach pin {adc_dovf dac_dunf dac_sync_in tdd_sync gps_pps up_enable up_txnrx} {
+    connect_bd_net [get_bd_pins const_zero_1b/dout] [get_bd_pins axi_ad9361_0/$pin]
+}
+foreach pin {dac_data_i0 dac_data_q0 dac_data_i1 dac_data_q1} {
+    connect_bd_net [get_bd_pins const_zero_16b/dout] [get_bd_pins axi_ad9361_0/$pin]
+}
+
+# Physical LVDS interface -- pin-mapped in constraints/board.xdc to the
+# Zedboard FMC LPC connector (Vadj = 2.5V).
+foreach port {rx_clk_in_p rx_clk_in_n rx_frame_in_p rx_frame_in_n} {
+    create_bd_port -dir I ${port}
+}
+foreach port {tx_clk_out_p tx_clk_out_n tx_frame_out_p tx_frame_out_n} {
+    create_bd_port -dir O ${port}
+}
+create_bd_port -dir I -from 5 -to 0 rx_data_in_p
+create_bd_port -dir I -from 5 -to 0 rx_data_in_n
+create_bd_port -dir O -from 5 -to 0 tx_data_out_p
+create_bd_port -dir O -from 5 -to 0 tx_data_out_n
+create_bd_port -dir O enable
+create_bd_port -dir O txnrx
+
+foreach pin {rx_clk_in_p rx_clk_in_n rx_frame_in_p rx_frame_in_n rx_data_in_p rx_data_in_n \
+             tx_clk_out_p tx_clk_out_n tx_frame_out_p tx_frame_out_n tx_data_out_p tx_data_out_n \
+             enable txnrx} {
+    connect_bd_net [get_bd_ports $pin] [get_bd_pins axi_ad9361_0/$pin]
+}
 
 assign_bd_address
 

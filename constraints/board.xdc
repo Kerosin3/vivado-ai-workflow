@@ -312,5 +312,59 @@ set_property IOSTANDARD LVCMOS18 [get_ports -of_objects [get_iobanks 34]];
 # set_property IOSTANDARD LVCMOS25 [get_ports -of_objects [get_iobanks 35]];
 set_property IOSTANDARD LVCMOS18 [get_ports -of_objects [get_iobanks 35]];
 
-# Note that the bank voltage for IO Bank 13 is fixed to 3.3V on ZedBoard. 
+# Note that the bank voltage for IO Bank 13 is fixed to 3.3V on ZedBoard.
 set_property IOSTANDARD LVCMOS33 [get_ports -of_objects [get_iobanks 13]];
+
+## ----------------------------------------------------------------------------
+## FMC LPC - AD9361 (FMCOMMS2/3) digital interface, Bank 34, Vadj = 2.5V
+##
+## Pin numbers verified against Analog Devices' own zed/system_constr.xdc
+## (analogdevicesinc/hdl, hdl_2023_r2) -- same physical FMC LPC connector,
+## same pin numbers as the generic FMC_LA* placeholders above. Placed here
+## (after the Bank 34 blanket IOSTANDARD default above) on purpose: that
+## blanket rule only overwrites ports already PACKAGE_PIN-assigned by the
+## time it runs (see the comment on it), so putting these after it means
+## these explicit per-pin IOSTANDARDs are the ones that actually stick,
+## instead of getting silently clobbered back to the bank's LVCMOS18
+## default -- see the file's own note above about evaluation order.
+## ----------------------------------------------------------------------------
+set_property -dict {PACKAGE_PIN M19 IOSTANDARD LVDS_25 DIFF_TERM TRUE} [get_ports rx_clk_in_p]      ; # FMC_LPC_LA00_CC_P
+set_property -dict {PACKAGE_PIN M20 IOSTANDARD LVDS_25 DIFF_TERM TRUE} [get_ports rx_clk_in_n]      ; # FMC_LPC_LA00_CC_N
+set_property -dict {PACKAGE_PIN N19 IOSTANDARD LVDS_25 DIFF_TERM TRUE} [get_ports rx_frame_in_p]    ; # FMC_LPC_LA01_CC_P
+set_property -dict {PACKAGE_PIN N20 IOSTANDARD LVDS_25 DIFF_TERM TRUE} [get_ports rx_frame_in_n]    ; # FMC_LPC_LA01_CC_N
+set_property -dict {PACKAGE_PIN P17 IOSTANDARD LVDS_25 DIFF_TERM TRUE} [get_ports {rx_data_in_p[0]}]; # FMC_LPC_LA02_P
+set_property -dict {PACKAGE_PIN P18 IOSTANDARD LVDS_25 DIFF_TERM TRUE} [get_ports {rx_data_in_n[0]}]; # FMC_LPC_LA02_N
+set_property -dict {PACKAGE_PIN N22 IOSTANDARD LVDS_25 DIFF_TERM TRUE} [get_ports {rx_data_in_p[1]}]; # FMC_LPC_LA03_P
+set_property -dict {PACKAGE_PIN P22 IOSTANDARD LVDS_25 DIFF_TERM TRUE} [get_ports {rx_data_in_n[1]}]; # FMC_LPC_LA03_N
+set_property -dict {PACKAGE_PIN M21 IOSTANDARD LVDS_25 DIFF_TERM TRUE} [get_ports {rx_data_in_p[2]}]; # FMC_LPC_LA04_P
+set_property -dict {PACKAGE_PIN M22 IOSTANDARD LVDS_25 DIFF_TERM TRUE} [get_ports {rx_data_in_n[2]}]; # FMC_LPC_LA04_N
+set_property -dict {PACKAGE_PIN J18 IOSTANDARD LVDS_25 DIFF_TERM TRUE} [get_ports {rx_data_in_p[3]}]; # FMC_LPC_LA05_P
+set_property -dict {PACKAGE_PIN K18 IOSTANDARD LVDS_25 DIFF_TERM TRUE} [get_ports {rx_data_in_n[3]}]; # FMC_LPC_LA05_N
+set_property -dict {PACKAGE_PIN L21 IOSTANDARD LVDS_25 DIFF_TERM TRUE} [get_ports {rx_data_in_p[4]}]; # FMC_LPC_LA06_P
+set_property -dict {PACKAGE_PIN L22 IOSTANDARD LVDS_25 DIFF_TERM TRUE} [get_ports {rx_data_in_n[4]}]; # FMC_LPC_LA06_N
+set_property -dict {PACKAGE_PIN T16 IOSTANDARD LVDS_25 DIFF_TERM TRUE} [get_ports {rx_data_in_p[5]}]; # FMC_LPC_LA07_P
+set_property -dict {PACKAGE_PIN T17 IOSTANDARD LVDS_25 DIFF_TERM TRUE} [get_ports {rx_data_in_n[5]}]; # FMC_LPC_LA07_N
+
+set_property -dict {PACKAGE_PIN J21 IOSTANDARD LVDS_25} [get_ports tx_clk_out_p]                    ; # FMC_LPC_LA08_P
+set_property -dict {PACKAGE_PIN J22 IOSTANDARD LVDS_25} [get_ports tx_clk_out_n]                    ; # FMC_LPC_LA08_N
+set_property -dict {PACKAGE_PIN R20 IOSTANDARD LVDS_25} [get_ports tx_frame_out_p]                  ; # FMC_LPC_LA09_P
+set_property -dict {PACKAGE_PIN R21 IOSTANDARD LVDS_25} [get_ports tx_frame_out_n]                  ; # FMC_LPC_LA09_N
+set_property -dict {PACKAGE_PIN N17 IOSTANDARD LVDS_25} [get_ports {tx_data_out_p[0]}]              ; # FMC_LPC_LA11_P
+set_property -dict {PACKAGE_PIN N18 IOSTANDARD LVDS_25} [get_ports {tx_data_out_n[0]}]              ; # FMC_LPC_LA11_N
+set_property -dict {PACKAGE_PIN P20 IOSTANDARD LVDS_25} [get_ports {tx_data_out_p[1]}]              ; # FMC_LPC_LA12_P
+set_property -dict {PACKAGE_PIN P21 IOSTANDARD LVDS_25} [get_ports {tx_data_out_n[1]}]              ; # FMC_LPC_LA12_N
+set_property -dict {PACKAGE_PIN L17 IOSTANDARD LVDS_25} [get_ports {tx_data_out_p[2]}]              ; # FMC_LPC_LA13_P
+set_property -dict {PACKAGE_PIN M17 IOSTANDARD LVDS_25} [get_ports {tx_data_out_n[2]}]              ; # FMC_LPC_LA13_N
+set_property -dict {PACKAGE_PIN R19 IOSTANDARD LVDS_25} [get_ports {tx_data_out_p[3]}]              ; # FMC_LPC_LA10_P
+set_property -dict {PACKAGE_PIN T19 IOSTANDARD LVDS_25} [get_ports {tx_data_out_n[3]}]              ; # FMC_LPC_LA10_N
+set_property -dict {PACKAGE_PIN K19 IOSTANDARD LVDS_25} [get_ports {tx_data_out_p[4]}]              ; # FMC_LPC_LA14_P
+set_property -dict {PACKAGE_PIN K20 IOSTANDARD LVDS_25} [get_ports {tx_data_out_n[4]}]              ; # FMC_LPC_LA14_N
+set_property -dict {PACKAGE_PIN J16 IOSTANDARD LVDS_25} [get_ports {tx_data_out_p[5]}]              ; # FMC_LPC_LA15_P
+set_property -dict {PACKAGE_PIN J17 IOSTANDARD LVDS_25} [get_ports {tx_data_out_n[5]}]              ; # FMC_LPC_LA15_N
+
+set_property -dict {PACKAGE_PIN J20 IOSTANDARD LVCMOS25} [get_ports enable]                         ; # FMC_LPC_LA16_P
+set_property -dict {PACKAGE_PIN K21 IOSTANDARD LVCMOS25} [get_ports txnrx]                          ; # FMC_LPC_LA16_N
+
+# AD9361 recovers its own clock from rx_clk_in -- this just bounds the
+# achievable rate for STA; revisit once an actual DATA_RATE/mode is chosen.
+create_clock -name rx_clk_in -period 4.000 [get_ports rx_clk_in_p]
